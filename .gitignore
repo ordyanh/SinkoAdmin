@@ -1,0 +1,19 @@
+﻿node_modules
+dist
+dist-ssr
+*.local
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Azure Deployment Secrets
+deploy.secrets.bat
+*.secrets.bat
+!deploy.secrets.example.bat
+.env.deploy
