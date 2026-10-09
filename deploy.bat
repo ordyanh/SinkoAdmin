@@ -6,6 +6,7 @@ REM Azure Deployment configuration for SinkoAdmin
 REM ============================================================
 set "TENANT_ID=da7e178e-6040-4a21-86e6-cd2101623209"
 set "CLIENT_ID=8d50b8d4-ac56-489a-b5a3-e81c67cb1703"
+
 REM Load secret from local deploy.secrets.bat (or environment variable)
 if exist "%~dp0deploy.secrets.bat" (
     call "%~dp0deploy.secrets.bat"
@@ -15,6 +16,7 @@ if not defined CLIENT_SECRET (
     echo Please create deploy.secrets.bat with your Azure Client Secret.
     exit /b 1
 )
+
 set "SUBSCRIPTION_ID=8061f227-7384-4972-a727-0f4b2133336c"
 set "RESOURCE_GROUP=SinkoAdmin_group"
 set "APP_NAME=SinkoAdmin"
@@ -66,7 +68,7 @@ curl.exe -s -X POST "https://login.microsoftonline.com/%TENANT_ID%/oauth2/token"
 
 if errorlevel 1 (
     echo [ERROR] Failed to contact Azure authentication endpoint!
-    del /q "%TOKEN_RESPONSE%" >nul 2>&1
+    if exist "%TOKEN_RESPONSE%" del /q "%TOKEN_RESPONSE%" >nul 2>&1
     exit /b 1
 )
 
@@ -75,7 +77,7 @@ for /f "usebackq delims=" %%T in (`powershell.exe -NoProfile -Command ^
     set "TOKEN=%%T"
 )
 
-del /q "%TOKEN_RESPONSE%" >nul 2>&1
+if exist "%TOKEN_RESPONSE%" del /q "%TOKEN_RESPONSE%" >nul 2>&1
 
 if not defined TOKEN (
     echo [ERROR] Authentication failed!
@@ -124,11 +126,11 @@ curl.exe -s -f -X POST "%KUDU_ZIP_URL%" ^
 if errorlevel 1 (
     echo.
     echo [ERROR] Zip deployment failed!
-    del /q "%ZIP_PATH%" >nul 2>&1
+    if exist "%ZIP_PATH%" del /q "%ZIP_PATH%" >nul 2>&1
     exit /b 1
 )
 
-del /q "%ZIP_PATH%" >nul 2>&1
+if exist "%ZIP_PATH%" del /q "%ZIP_PATH%" >nul 2>&1
 
 echo.
 echo Zip deployment completed!
@@ -141,28 +143,28 @@ echo [5/6] Verifying server dependencies on Azure...
 
 set "NPM_CMD_FILE=%TEMP%\sinko_admin_dep_cmd_%RANDOM%.json"
 set "NPM_RES_FILE=%TEMP%\sinko_admin_dep_res_%RANDOM%.json"
+set "INSTALL_CMD_FILE=%TEMP%\sinko_admin_npm_install_%RANDOM%.json"
 
-echo {"command":"node scripts/azure-check-deps.js","dir":"C:\\home\\site\\wwwroot"} > "%NPM_CMD_FILE%"
+echo {"command":"node scripts/azure-check-deps.js","dir":"C:\\home\\site\\wwwroot"} > "!NPM_CMD_FILE!"
 
 curl.exe -s -X POST "%KUDU_CMD_URL%" ^
     -H "Authorization: Bearer %TOKEN%" ^
     -H "Content-Type: application/json" ^
-    --data-binary "@%NPM_CMD_FILE%" ^
-    -o "%NPM_RES_FILE%"
+    --data-binary "@!NPM_CMD_FILE!" ^
+    -o "!NPM_RES_FILE!"
 
-del /q "%NPM_CMD_FILE%" >nul 2>&1
+if exist "!NPM_CMD_FILE!" del /q "!NPM_CMD_FILE!" >nul 2>&1
 
-findstr /C:"\"ExitCode\":0" "%NPM_RES_FILE%" >nul 2>&1
+findstr /C:"\"ExitCode\":0" "!NPM_RES_FILE!" >nul 2>&1
 if %ERRORLEVEL% EQU 0 (
-    del /q "%NPM_RES_FILE%" >nul 2>&1
+    if exist "!NPM_RES_FILE!" del /q "!NPM_RES_FILE!" >nul 2>&1
     echo Dependencies verified!
 ) else (
-    del /q "%NPM_RES_FILE%" >nul 2>&1
+    if exist "!NPM_RES_FILE!" del /q "!NPM_RES_FILE!" >nul 2>&1
     echo Missing dependencies detected. Installing on Azure - please wait...
-    set "INSTALL_CMD_FILE=%TEMP%\sinko_admin_npm_install_%RANDOM%.json"
-    echo {"command":"npm install --omit=dev --no-audit --no-fund","dir":"C:\\home\\site\\wwwroot"} > "%INSTALL_CMD_FILE%"
-    curl.exe -s -X POST "%KUDU_CMD_URL%" -H "Authorization: Bearer %TOKEN%" -H "Content-Type: application/json" --data-binary "@%INSTALL_CMD_FILE%" >nul 2>&1
-    del /q "%INSTALL_CMD_FILE%" >nul 2>&1
+    echo {"command":"npm install --omit=dev --no-audit --no-fund","dir":"C:\\home\\site\\wwwroot"} > "!INSTALL_CMD_FILE!"
+    curl.exe -s -X POST "%KUDU_CMD_URL%" -H "Authorization: Bearer %TOKEN%" -H "Content-Type: application/json" --data-binary "@!INSTALL_CMD_FILE!" >nul 2>&1
+    if exist "!INSTALL_CMD_FILE!" del /q "!INSTALL_CMD_FILE!" >nul 2>&1
     echo Installation finished!
 )
 

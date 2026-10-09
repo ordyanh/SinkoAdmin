@@ -60,7 +60,7 @@ app.use(express.static(path.join(__dirname, "dist"), { maxAge: "1h" }));
 app.use(express.static(path.join(__dirname, "public"), { maxAge: "1h" }));
 
 // 2. SPA client-side routing fallback - always serve index.html for all page routes
-app.get("*", (req, res) => {
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, "dist/index.html"));
 });
 

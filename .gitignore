@@ -17,3 +17,5 @@ deploy.secrets.bat
 *.secrets.bat
 !deploy.secrets.example.bat
 .env.deploy
+
+.vite
