@@ -109,7 +109,7 @@ export const OrganizationsPage: React.FC = () => {
       showToast(isHy ? "Կազմակերպության գործունեությունը կասեցվեց" : "Organization suspended", "warning");
       setSuspendModalOpen(false);
       setSuspendReason("");
-      handleOpenDetail(selectedId);
+      if (selectedId) handleOpenDetail(selectedId);
       fetchOrganizations();
     } catch (err: any) {
       showToast(err.message || (isHy ? "Կասեցման սխալ" : "Failed to suspend organization"), "error");
@@ -118,13 +118,14 @@ export const OrganizationsPage: React.FC = () => {
     }
   };
 
-  const handleReactivate = async () => {
-    if (!selectedId) return;
+  const handleReactivate = async (targetId?: string) => {
+    const id = targetId || selectedId;
+    if (!id) return;
     try {
       setSubmitting(true);
-      await adminApi.reactivateOrganization(selectedId);
+      await adminApi.reactivateOrganization(id);
       showToast(isHy ? "Կազմակերպությունը հաջողությամբ վերականգնվեց!" : "Organization reactivated successfully!", "success");
-      handleOpenDetail(selectedId);
+      if (selectedId) handleOpenDetail(selectedId);
       fetchOrganizations();
     } catch (err: any) {
       showToast(err.message || (isHy ? "Վերականգնման սխալ" : "Failed to reactivate organization"), "error");
@@ -239,14 +240,28 @@ export const OrganizationsPage: React.FC = () => {
                       </span>
                     </td>
                     <td style={{ textAlign: "right" }}>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        icon={<Eye size={14} />}
-                        onClick={() => handleOpenDetail(org.id)}
-                      >
-                        {t.common.details}
-                      </Button>
+                      <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end" }}>
+                        {(org.status === OrganizationStatus.Suspended || org.status === 2 || String(org.status).toLowerCase() === "suspended") && (
+                          <Button
+                            size="sm"
+                            variant="primary"
+                            icon={<PlayCircle size={14} />}
+                            onClick={() => handleReactivate(org.id)}
+                            title={isHy ? "Ակտիվացնել կազմակերպությունը" : "Activate Organization"}
+                            style={{ background: "#10b981", borderColor: "#10b981" }}
+                          >
+                            {isHy ? "Ակտիվացնել" : "Activate"}
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          icon={<Eye size={14} />}
+                          onClick={() => handleOpenDetail(org.id)}
+                        >
+                          {t.common.details}
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -292,7 +307,7 @@ export const OrganizationsPage: React.FC = () => {
                     variant="primary"
                     icon={<PlayCircle size={15} />}
                     loading={submitting}
-                    onClick={handleReactivate}
+                    onClick={() => handleReactivate()}
                   >
                     {t.organizations.reactivateOrgBtn}
                   </Button>

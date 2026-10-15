@@ -1,11 +1,11 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
-title Sinko Admin Panel [SERVER / AZURE CLOUD BACKEND]
+title Sinko Admin Panel [SERVER / DIGITALOCEAN CLOUD BACKEND]
 cd /d "%~dp0"
 
 echo ======================================================
 echo           S I N K O   A D M I N   P A N E L
-echo      Running with SERVER BACKEND (Azure Cloud API)
+echo    Running with SERVER BACKEND (DigitalOcean Cloud API)
 echo ======================================================
 echo.
 
@@ -26,7 +26,7 @@ if not exist "node_modules\" (
     )
 )
 
-echo [INFO] Setting backend target to REMOTE SERVER (Azure)...
+echo [INFO] Setting backend target to REMOTE SERVER (DigitalOcean Cloud)...
 call node scripts\switch-backend.js remote
 
 echo.

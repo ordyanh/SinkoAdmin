@@ -9,12 +9,19 @@ const __dirname = path.dirname(__filename);
 
 const normalizeUrl = (url) => (url ? url.replace(/\/+$/, "") : "");
 
-const isAzure = Boolean(process.env.WEBSITE_INSTANCE_ID || process.env.WEBSITE_SITE_NAME);
-const defaultTarget = isAzure || process.env.NODE_ENV === "production" ? "remote" : "local";
+const defaultTarget = process.env.NODE_ENV === "production" ? "remote" : "local";
 const isLocal = (process.env.VITE_BACKEND_TARGET || defaultTarget).toLowerCase() === "local";
 
+const LOCAL_AUTH_DEFAULT = "http://localhost:5273";
 const LOCAL_CORE_DEFAULT = "http://localhost:5206";
-const REMOTE_CORE_DEFAULT = "https://synco-h4etbseqg4h2ewcw.swedencentral-01.azurewebsites.net";
+const REMOTE_AUTH_DEFAULT = "https://lobster-app-zhysf.ondigitalocean.app";
+const REMOTE_CORE_DEFAULT = "https://octopus-app-bomx6.ondigitalocean.app";
+
+const AUTH_SERVICE_URL = normalizeUrl(
+  isLocal
+    ? process.env.VITE_LOCAL_AUTH_URL || LOCAL_AUTH_DEFAULT
+    : process.env.VITE_REMOTE_AUTH_URL || process.env.VITE_AUTH_API_URL || REMOTE_AUTH_DEFAULT
+);
 
 const CORE_SERVICE_URL = normalizeUrl(
   isLocal
@@ -32,12 +39,27 @@ app.get("/healthz", (req, res) => {
     status: "healthy",
     service: "SinkoAdmin",
     target: isLocal ? "local" : "remote",
+    authBackend: AUTH_SERVICE_URL,
     coreBackend: CORE_SERVICE_URL,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
-// Proxy Core Service Admin APIs to Azure Backend
+// 1. Proxy Auth Service APIs
+app.use(
+  createProxyMiddleware({
+    pathFilter: (pathname) =>
+      /^\/(api\/(auth|company|employee|verification-request|auth\/complete-onboarding|supplier\/(register|verify|resend-code)|me)|auth|me)/i.test(
+        pathname
+      ),
+    target: AUTH_SERVICE_URL,
+    changeOrigin: true,
+    secure: false,
+    followRedirects: true,
+  })
+);
+
+// 2. Proxy Core Service APIs
 app.use(
   createProxyMiddleware({
     pathFilter: (pathname) => /^\/api\//i.test(pathname),
@@ -48,7 +70,7 @@ app.use(
   })
 );
 
-// 1. Serve static assets with caching
+// 3. Serve static assets with caching
 app.use(
   "/assets",
   express.static(path.join(__dirname, "dist/assets"), {
@@ -59,7 +81,7 @@ app.use(
 app.use(express.static(path.join(__dirname, "dist"), { maxAge: "1h" }));
 app.use(express.static(path.join(__dirname, "public"), { maxAge: "1h" }));
 
-// 2. SPA client-side routing fallback - always serve index.html for all page routes
+// 4. SPA client-side routing fallback - always serve index.html for all page routes
 app.use((req, res) => {
   res.sendFile(path.join(__dirname, "dist/index.html"));
 });
@@ -67,6 +89,7 @@ app.use((req, res) => {
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`SinkoAdmin listening on port ${port}`);
-  console.log(`Backend Target: ${isLocal ? "LOCAL (http://localhost:5206)" : "REMOTE (Azure Cloud)"}`);
-  console.log(`Core Service URL: ${CORE_SERVICE_URL}`);
+  console.log(`Backend Target: ${isLocal ? "LOCAL (:5206 / :5273)" : "REMOTE (DigitalOcean Cloud)"}`);
+  console.log(`  Auth Service URL: ${AUTH_SERVICE_URL}`);
+  console.log(`  Core Service URL: ${CORE_SERVICE_URL}`);
 });

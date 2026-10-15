@@ -1,4 +1,4 @@
-﻿import fs from "node:fs";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -7,8 +7,10 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, "..");
 const envPath = path.join(rootDir, ".env");
 
+const LOCAL_AUTH = "http://localhost:5273";
 const LOCAL_CORE = "http://localhost:5206";
-const REMOTE_CORE = "https://synco-h4etbseqg4h2ewcw.swedencentral-01.azurewebsites.net";
+const REMOTE_AUTH = "https://lobster-app-zhysf.ondigitalocean.app";
+const REMOTE_CORE = "https://octopus-app-bomx6.ondigitalocean.app";
 
 const targetArg = (process.argv[2] || "").toLowerCase().trim();
 
@@ -31,26 +33,32 @@ function readEnv() {
 
 function writeEnv(target) {
   const isLocal = target === "local";
-  const activeUrl = isLocal ? LOCAL_CORE : REMOTE_CORE;
+  const activeAuthUrl = isLocal ? LOCAL_AUTH : REMOTE_AUTH;
+  const activeCoreUrl = isLocal ? LOCAL_CORE : REMOTE_CORE;
+
   const content = `# SinkoAdmin Backend Target Configuration
 # Values: "local" | "remote"
 VITE_BACKEND_TARGET=${isLocal ? "local" : "remote"}
 
-# Active Core API URL (Horeca API with AdminController)
-VITE_CORE_API_URL=${activeUrl}
+# Active URLs (used by proxy / direct client requests)
+VITE_AUTH_API_URL=${activeAuthUrl}/
+VITE_CORE_API_URL=${activeCoreUrl}/
 
-# Local C:\\Src\\synco-app\\Horeca endpoint
+# Local C:\\Src\\synco-app\\Horeca endpoints
+VITE_LOCAL_AUTH_URL=${LOCAL_AUTH}
 VITE_LOCAL_CORE_URL=${LOCAL_CORE}
 
-# Remote Azure cloud endpoint
-VITE_REMOTE_CORE_URL=${REMOTE_CORE}
+# Remote DigitalOcean endpoints
+VITE_REMOTE_AUTH_URL=${REMOTE_AUTH}/
+VITE_REMOTE_CORE_URL=${REMOTE_CORE}/
 `;
 
   fs.writeFileSync(envPath, content, "utf-8");
   console.log(`\n======================================================`);
-  console.log(` Switched SinkoAdmin Backend Target to: ${isLocal ? "LOCAL (C:\\Src\\synco-app\\Horeca :5206)" : "REMOTE (Azure Cloud)"}`);
+  console.log(` Switched SinkoAdmin Backend Target to: ${isLocal ? "LOCAL (C:\\Src\\synco-app\\Horeca)" : "REMOTE (DigitalOcean Cloud)"}`);
   console.log(`======================================================`);
-  console.log(` Admin API URL: ${activeUrl}`);
+  console.log(` Auth Service: ${activeAuthUrl}`);
+  console.log(` Core Web API: ${activeCoreUrl}`);
   console.log(`\nRestart Vite dev server if running to apply proxy changes.\n`);
 }
 
@@ -62,8 +70,9 @@ function showStatus() {
   console.log(` Current SinkoAdmin Backend Target: ${isLocal ? "LOCAL" : "REMOTE"}`);
   console.log(`======================================================`);
   console.log(` Target Mode : ${target}`);
-  console.log(` Core API URL: ${env.VITE_CORE_API_URL || (isLocal ? LOCAL_CORE : REMOTE_CORE)}`);
-  console.log(`\nTo switch:\n  npm run use:local   (switch to C:\\Src\\synco-app\\Horeca local backend :5206)\n  npm run use:remote  (switch to Azure remote cloud backend)\n`);
+  console.log(` Auth Service: ${env.VITE_AUTH_API_URL || (isLocal ? LOCAL_AUTH : REMOTE_AUTH)}`);
+  console.log(` Core Web API: ${env.VITE_CORE_API_URL || (isLocal ? LOCAL_CORE : REMOTE_CORE)}`);
+  console.log(`\nTo switch:\n  npm run use:local   (switch to local backend :5206 / :5273)\n  npm run use:remote  (switch to DigitalOcean cloud backend)\n`);
 }
 
 if (targetArg === "local" || targetArg === "remote") {

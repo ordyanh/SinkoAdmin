@@ -1,4 +1,4 @@
-﻿import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState } from "react";
 
 export type ToastType = "success" | "error" | "info" | "warning";
 
@@ -11,6 +11,7 @@ export interface ToastMessage {
 interface BackendContextType {
   backendTarget: "local" | "remote";
   coreUrl: string;
+  authUrl: string;
   switchTarget: (target: "local" | "remote") => void;
   toasts: ToastMessage[];
   showToast: (message: string, type?: ToastType) => void;
@@ -28,7 +29,11 @@ export const BackendProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const coreUrl = backendTarget === "local"
     ? (import.meta.env.VITE_LOCAL_CORE_URL || "http://localhost:5206")
-    : (import.meta.env.VITE_REMOTE_CORE_URL || "https://synco-h4etbseqg4h2ewcw.swedencentral-01.azurewebsites.net");
+    : (import.meta.env.VITE_REMOTE_CORE_URL || "https://octopus-app-bomx6.ondigitalocean.app");
+
+  const authUrl = backendTarget === "local"
+    ? (import.meta.env.VITE_LOCAL_AUTH_URL || "http://localhost:5273")
+    : (import.meta.env.VITE_REMOTE_AUTH_URL || "https://lobster-app-zhysf.ondigitalocean.app");
 
   const showToast = (message: string, type: ToastType = "info") => {
     const id = Math.random().toString(36).substring(2, 9);
@@ -46,13 +51,13 @@ export const BackendProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setBackendTarget(target);
     const isHy = typeof window !== "undefined" && localStorage.getItem("sinko_admin_lang") === "hy";
     const msg = isHy
-      ? (target === "local" ? "Միացված է լոկալ սերվերին (:5206)" : "Միացված է ամպային Azure սերվերին")
-      : (target === "local" ? "Switched to Local Backend (:5206)" : "Switched to Cloud Azure Backend");
+      ? (target === "local" ? "Միացված է լոկալ սերվերին (:5206 / :5273)" : "Միացված է ամպային DigitalOcean սերվերին")
+      : (target === "local" ? "Switched to Local Backend (:5206 / :5273)" : "Switched to Cloud DigitalOcean Backend");
     showToast(msg, "info");
   };
 
   return (
-    <BackendContext.Provider value={{ backendTarget, coreUrl, switchTarget, toasts, showToast, removeToast }}>
+    <BackendContext.Provider value={{ backendTarget, coreUrl, authUrl, switchTarget, toasts, showToast, removeToast }}>
       {children}
     </BackendContext.Provider>
   );

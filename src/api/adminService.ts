@@ -167,6 +167,11 @@ export const adminApi = {
     return res.data;
   },
 
+  activateUser: async (userId: string) => {
+    const res = await client.post<{ message: string }>(`/admin/users/${userId}/activate`);
+    return res.data;
+  },
+
   toggleUserBlockStatus: async (userId: string, isBlocked: boolean, reason?: string) => {
     const res = await client.post<{ message: string }>(`/admin/users/${userId}/block`, { isBlocked, reason });
     return res.data;

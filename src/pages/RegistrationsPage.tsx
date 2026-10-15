@@ -161,6 +161,21 @@ export const RegistrationsPage: React.FC = () => {
     }
   };
 
+  const handleQuickApprove = async (id: string) => {
+    try {
+      setSubmitting(true);
+      const res = await adminApi.approveRegistration(id, {
+        selectedPlan: "Business",
+      });
+      showToast(res.message || (isHy ? "Հայտը հաստատվեց և օգտատերը ակտիվացվեց:" : "Registration approved and activated!"), "success");
+      fetchRegistrations();
+    } catch (err: any) {
+      showToast(err.message || (isHy ? "Հաստատման սխալ" : "Failed to approve registration"), "error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
       {/* Table Container */}
@@ -267,14 +282,28 @@ export const RegistrationsPage: React.FC = () => {
                       </span>
                     </td>
                     <td style={{ textAlign: "right" }}>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        icon={<Eye size={14} />}
-                        onClick={() => handleOpenDetail(reg.id)}
-                      >
-                        {t.common.details}
-                      </Button>
+                      <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end" }}>
+                        {reg.status !== RegistrationStatus.Approved && reg.status !== RegistrationStatus.Declined && (
+                          <Button
+                            size="sm"
+                            variant="primary"
+                            icon={<CheckCircle size={14} />}
+                            onClick={() => handleQuickApprove(reg.id)}
+                            title={isHy ? "Հաստատել և ակտիվացնել" : "Approve & Activate"}
+                            style={{ background: "#10b981", borderColor: "#10b981" }}
+                          >
+                            {isHy ? "Ակտիվացնել" : "Activate"}
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          icon={<Eye size={14} />}
+                          onClick={() => handleOpenDetail(reg.id)}
+                        >
+                          {t.common.details}
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -42,6 +42,7 @@ export const UsersPage: React.FC = () => {
   const [userPageSize, setUserPageSize] = useState(20);
   const [userSearch, setUserSearch] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState<UserRole | "">("");
+  const [userActiveFilter, setUserActiveFilter] = useState<"" | "active" | "pending">("");
 
   // Employees State
   const [employees, setEmployees] = useState<AdminEmployeeResponse[]>([]);
@@ -96,6 +97,7 @@ export const UsersPage: React.FC = () => {
       const res = await adminApi.getUsers({
         searchTerm: userSearch.trim() || undefined,
         role: userRoleFilter === "" ? undefined : (Number(userRoleFilter) as UserRole),
+        isActive: userActiveFilter === "" ? undefined : userActiveFilter === "active",
         pageNumber: userPageNum,
         pageSize: userPageSize,
       });
@@ -131,7 +133,7 @@ export const UsersPage: React.FC = () => {
   useEffect(() => {
     if (activeTab === "users") fetchUsers();
     else fetchEmployees();
-  }, [activeTab, userPageNum, userPageSize, userRoleFilter, empPageNum, empPageSize]);
+  }, [activeTab, userPageNum, userPageSize, userRoleFilter, userActiveFilter, empPageNum, empPageSize]);
 
   // Create User Handler
   const handleCreateUser = async (e: React.FormEvent) => {
@@ -190,6 +192,20 @@ export const UsersPage: React.FC = () => {
       fetchUsers();
     } catch (err: any) {
       showToast(err.message || (isHy ? "Թարմացման սխալ" : "Failed to update user"), "error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+    // Activate User Handler
+  const handleActivateUser = async (u: AdminUserResponse) => {
+    try {
+      setSubmitting(true);
+      await adminApi.activateUser(u.id);
+      showToast(isHy ? "Օգտատերը հաջողությամբ ակտիվացվեց:" : "User activated successfully!", "success");
+      fetchUsers();
+    } catch (err: any) {
+      showToast(err.message || (isHy ? "Ակտիվացման սխալ" : "Failed to activate user"), "error");
     } finally {
       setSubmitting(false);
     }
@@ -317,6 +333,20 @@ export const UsersPage: React.FC = () => {
                 <option value={UserRole.Owner}>{isHy ? "Ղեկավար / Ադմին" : "Owner / Admin"}</option>
               </select>
 
+              <select
+                className="form-select"
+                value={userActiveFilter}
+                onChange={(e) => {
+                  setUserActiveFilter(e.target.value as any);
+                  setUserPageNum(1);
+                }}
+                style={{ width: "175px" }}
+              >
+                <option value="">{t.users.filterAllStatuses || (isHy ? "Բոլոր կարգավիճակները" : "All Statuses")}</option>
+                <option value="active">{t.users.filterActiveOnly || (isHy ? "Ակտիվ" : "Active")}</option>
+                <option value="pending">{t.users.filterPendingOnly || (isHy ? "Սպասում են ակտիվացման" : "Pending Activation")}</option>
+              </select>
+
               <Button
                 variant="primary"
                 icon={<UserPlus size={16} />}
@@ -369,7 +399,17 @@ export const UsersPage: React.FC = () => {
                         {u.isActive ? (
                           <span className="badge badge-success">{t.users.activeStatus}</span>
                         ) : (
-                          <span className="badge badge-danger">{t.users.blockedStatus}</span>
+                          <span
+                            className="badge"
+                            style={{
+                              background: "rgba(245, 158, 11, 0.15)",
+                              color: "#f59e0b",
+                              border: "1px solid rgba(245, 158, 11, 0.3)",
+                              fontWeight: 600
+                            }}
+                          >
+                            {t.users.pendingStatus || (isHy ? "Սպասում է ակտիվացման" : "Pending Activation")}
+                          </span>
                         )}
                       </td>
                       <td>
@@ -386,6 +426,18 @@ export const UsersPage: React.FC = () => {
                       </td>
                       <td style={{ textAlign: "right" }}>
                         <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end" }}>
+                          {!u.isActive && (
+                            <Button
+                              size="sm"
+                              variant="primary"
+                              icon={<UserCheck size={13} />}
+                              onClick={() => handleActivateUser(u)}
+                              title={t.users.activateUserBtn || (isHy ? "Ակտիվացնել" : "Activate")}
+                              style={{ background: "#10b981", borderColor: "#10b981" }}
+                            >
+                              {t.users.activateUserBtn || (isHy ? "Ակտիվացնել" : "Activate")}
+                            </Button>
+                          )}
                           <Button
                             size="sm"
                             variant="secondary"
