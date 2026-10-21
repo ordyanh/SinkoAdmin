@@ -30,6 +30,7 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5180,
       host: true,
+      allowedHosts: true,
       proxy: {
         // Auth Service API routes
         '^/(api/([Aa]uth|[Cc]ompany|[Ee]mployee|verification-request|auth/complete-onboarding|[Ss]upplier/(register|verify|resend-code)|me)|[Aa]uth|me)': {
