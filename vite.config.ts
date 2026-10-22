@@ -3,8 +3,8 @@ import react from '@vitejs/plugin-react';
 
 const normalizeUrl = (url?: string) => (url ? url.replace(/\/+$/, '') : '');
 
-const LOCAL_AUTH_DEFAULT = 'http://localhost:5273';
-const LOCAL_CORE_DEFAULT = 'http://localhost:5206';
+const LOCAL_AUTH_DEFAULT = 'http://127.0.0.1:5273';
+const LOCAL_CORE_DEFAULT = 'http://127.0.0.1:5206';
 const REMOTE_AUTH_DEFAULT = 'https://lobster-app-zhysf.ondigitalocean.app';
 const REMOTE_CORE_DEFAULT = 'https://octopus-app-bomx6.ondigitalocean.app';
 
